@@ -232,8 +232,8 @@ sudo systemctl status ukabu-update-search-engines.timer
 # /etc/nginx/nginx.conf (inside http block)
 
 # Rate limit zones
-limit_req_zone $binary_remote_addr zone=pow_challenge:10m rate=10r/m;
-limit_req_zone $binary_remote_addr zone=pow_validate:10m rate=20r/m;
+limit_req_zone $binary_remote_addr zone=ukabu_challenge:10m rate=10r/m;
+limit_req_zone $binary_remote_addr zone=ukabu_validate:10m rate=20r/m;
 limit_req_zone $binary_remote_addr zone=general:10m rate=100r/m;
 
 # Connection limit
@@ -244,18 +244,18 @@ limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
 ```nginx
 # /etc/ukabu/includes/endpoints.inc
 
-location = /__pow_challenge {
-    limit_req zone=pow_challenge burst=5 nodelay;
-    js_content powModule.generateChallenge;
+location = /ukabu_challenge {
+    limit_req zone=ukabu_challenge burst=5 nodelay;
+    js_content pow.generateChallenge;
 }
 
-location = /__pow_validate {
-    limit_req zone=pow_validate burst=10 nodelay;
-    js_content powModule.validateSolution;
+location = /ukabu_validate {
+    limit_req zone=ukabu_validate burst=10 nodelay;
+    js_content pow.validateSolution;
 }
 
-location = /__pow_verify {
-    limit_req zone=pow_challenge burst=5 nodelay;
+location = /ukabu_verify {
+    limit_req zone=ukabu_challenge burst=5 nodelay;
     alias /etc/ukabu/pages/challenge.html;
 }
 ```
