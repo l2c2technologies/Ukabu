@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Blocked - Security Verification</title>
+    <style>
+        :root {
+            --error-red: #d9534f;
+            --warning-yellow: #f0ad4e;
+            --info-blue: #5bc0de;
+            --waf-blue: #0056b3;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 700px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--error-red);
+            margin-top: 0;
+            font-size: 2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1::before {
+            content: "ðŸš«";
+            font-size: 1.2em;
+        }
+
+        h2 {
+            color: var(--waf-blue);
+            font-size: 1.3em;
+            margin-top: 30px;
+        }
+
+        p {
+            color: #333;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+
+        .info-box {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning-yellow);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            color: #856404;
+        }
+
+        .reason-box {
+            background-color: #f8d7da;
+            border-left: 4px solid var(--error-red);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .reason-box p {
+            margin: 5px 0;
+            color: #721c24;
+            font-weight: 600;
+        }
+
+        .steps {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .steps h3 {
+            color: var(--waf-blue);
+            margin-top: 0;
+            font-size: 1.1em;
+        }
+
+        .steps ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        .steps li {
+            margin: 10px 0;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .contact-info {
+            background-color: #d1ecf1;
+            border-left: 4px solid var(--info-blue);
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .contact-info p {
+            margin: 8px 0;
+            color: #0c5460;
+        }
+
+        .contact-info a {
+            color: #0056b3;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+
+        code {
+            background-color: #e9ecef;
+            padding: 3px 7px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #d63384;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .footer a {
+            color: #999;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media screen and (max-width: 480px) {
+            .error-container {
+                padding: 25px 15px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            h2 {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1>Access Blocked</h1>
+
+        <p>
+            Your IP address has been temporarily blocked from accessing this website due to suspicious activity or failed security verification attempts.
+        </p>
+
+        <div class="reason-box">
+            <p><strong>Block Reason:</strong> Multiple failed browser verification attempts</p>
+        </div>
+
+        <div class="info-box">
+            <p><strong>â„¹ï¸ What does this mean?</strong></p>
+            <p>
+                This website uses browser verification to protect against automated bots and scrapers. 
+                Your IP address was blocked after failing to complete the verification process multiple times.
+            </p>
+        </div>
+
+        <h2>Common Causes</h2>
+
+        <div class="steps">
+            <ol>
+                <li><strong>JavaScript is disabled:</strong> Browser verification requires JavaScript to be enabled. Please enable JavaScript in your browser settings.</li>
+                
+                <li><strong>Using a bot or automated tool:</strong> If you're using curl, wget, or any automated scraping tool, these are intentionally blocked by our security system.</li>
+                
+                <li><strong>Network issues:</strong> Slow internet connection may have caused verification timeouts.</li>
+                
+                <li><strong>Browser extensions:</strong> Some browser extensions (ad blockers, privacy tools) may interfere with verification.</li>
+            </ol>
+        </div>
+
+        <h2>What You Can Do</h2>
+
+        <div class="steps">
+            <h3>If you're a legitimate user:</h3>
+            <ol>
+                <li><strong>Wait for the block to expire:</strong> Temporary blocks typically last 7 days by default. After this period, you can try again.</li>
+                
+                <li><strong>Enable JavaScript:</strong> Make sure JavaScript is enabled in your browser (see your browser's security settings).</li>
+                
+                <li><strong>Try a different network:</strong> If you're on a shared network (VPN, proxy, corporate network), try from a different connection.</li>
+                
+                <li><strong>Contact the site administrator:</strong> If you believe this is a mistake, contact the website owner using the information below.</li>
+            </ol>
+        </div>
+
+        <div class="steps">
+            <h3>If you're a developer or legitimate bot:</h3>
+            <ol>
+                <li><strong>Request API access:</strong> Contact the site administrator to request API credentials or whitelist your IP address.</li>
+                
+                <li><strong>Respect robots.txt:</strong> Always check and respect the site's <code>/robots.txt</code> file.</li>
+                
+                <li><strong>Reduce request rate:</strong> If you're scraping, reduce your request frequency and add proper User-Agent identification.</li>
+            </ol>
+        </div>
+
+        <div class="contact-info">
+            <p><strong>ðŸ“§ Need Help?</strong></p>
+            <p>
+                If you believe you were blocked in error or need assistance, please contact the website administrator:
+            </p>
+            <p>
+                <strong>Email:</strong> <a href="mailto:admin@example.com">admin@example.com</a><br>
+                <strong>Subject:</strong> Security Block Appeal - IP: <span id="user-ip">Loading...</span>
+            </p>
+        </div>
+
+        <div class="footer">
+            Copyright (c) 2025 by L2C2 Technologies. All rights reserved.<br>
+            <a href="https://github.com/l2c2technologies/ukabu" target="_blank">UKABU WAF</a> - Collaborative Anti-AI Scraper Bot Web Application Firewall
+        </div>
+    </div>
+
+    <script>
+        // Try to display user's IP (if available)
+        fetch('https://api.ipify.org?format=json')
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                document.getElementById('user-ip').textContent = data.ip;
+            })
+            .catch(function(error) {
+                document.getElementById('user-ip').textContent = 'Unknown';
+            });
+    </script>
+</body>
+</html>

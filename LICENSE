@@ -1,0 +1,81 @@
+UKABU WAF - Licensing Information
+
+Copyright (c) 2025 by L2C2 Technologies. All rights reserved.
+
+================================================================================
+
+This software is proprietary and confidential.
+
+UKABU WAF is a collaborative anti-AI scraper bot Web Application Firewall
+developed by L2C2 Technologies. All rights to the software, including but not
+limited to the source code, documentation, design, and intellectual property,
+are reserved by L2C2 Technologies.
+
+================================================================================
+
+LICENSING INQUIRIES
+
+For information about licensing options, pricing, commercial use, distribution
+rights, or any other licensing-related questions, please contact:
+
+    Indranil Das Gupta
+    Email: indradg@l2c2.co.in
+    Organization: L2C2 Technologies
+
+================================================================================
+
+RESTRICTIONS
+
+Without explicit written permission from L2C2 Technologies, you may not:
+
+1. Use this software in production environments
+2. Distribute or redistribute this software
+3. Modify, adapt, or create derivative works
+4. Reverse engineer, decompile, or disassemble the software
+5. Use this software for commercial purposes
+6. Remove or alter any copyright notices, trademarks, or licensing information
+
+================================================================================
+
+EVALUATION USE
+
+Phase 1 releases may be evaluated for non-production testing and development
+purposes only. Any production deployment requires a valid license from
+L2C2 Technologies.
+
+================================================================================
+
+WARRANTY DISCLAIMER
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+L2C2 TECHNOLOGIES BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF,
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+================================================================================
+
+THIRD-PARTY COMPONENTS
+
+This software may include or depend on third-party open-source components:
+
+- nginx: 2-clause BSD License
+- nginx-njs: 2-clause BSD License
+
+These components retain their original licenses. UKABU WAF's proprietary
+components are separate and subject to the terms described in this document.
+
+================================================================================
+
+TRADEMARKS
+
+UKABU WAF is a trademark of L2C2 Technologies. All other trademarks are the
+property of their respective owners.
+
+================================================================================
+
+Last Updated: 2025-11-09
+Version: 1.0.0-phase1
+
+================================================================================

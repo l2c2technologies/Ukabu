@@ -1,0 +1,654 @@
+#!/usr/bin/env python3
+# Copyright (c) 2025 by L2C2 Technologies. All rights reserved.
+# 
+# For licensing inquiries, contact:
+# Indranil Das Gupta <indradg@l2c2.co.in>
+
+"""
+UKABU WAF Management CLI
+
+Command-line interface for managing UKABU WAF domains, IP lists,
+nginx configuration, and daemon communication.
+"""
+
+import sys
+import click
+import logging
+from pathlib import Path
+from typing import Optional
+
+# Add library path if installed in /usr/local/lib
+sys.path.insert(0, '/usr/local/lib')
+
+try:
+    from ukabu import (
+        setup_logging, validate_ip, validate_domain, check_root_privileges,
+        confirm_action, format_bytes,
+        DomainManager, IPManager, NginxManager, DaemonClient
+    )
+except ImportError:
+    print("ERROR: UKABU library not found. Please run install-phase3.sh", file=sys.stderr)
+    sys.exit(2)
+
+
+# Global options
+@click.group()
+@click.option('--verbose', '-v', is_flag=True, help='Enable verbose logging')
+@click.option('--dry-run', is_flag=True, help='Show what would be done without making changes')
+@click.pass_context
+def cli(ctx, verbose, dry_run):
+    """UKABU WAF Management Tool - Phase 3"""
+    ctx.ensure_object(dict)
+    ctx.obj['verbose'] = verbose
+    ctx.obj['dry_run'] = dry_run
+    ctx.obj['logger'] = setup_logging(verbose=verbose, audit=not dry_run)
+    
+    # Warn if not running as root (except for read-only commands)
+    if not check_root_privileges() and ctx.invoked_subcommand not in ['status', 'list']:
+        ctx.obj['logger'].warning("Not running as root - some operations may fail")
+
+
+# Domain management commands
+@cli.group()
+@click.pass_context
+def domain(ctx):
+    """Manage protected domains"""
+    ctx.obj['domain_manager'] = DomainManager(dry_run=ctx.obj['dry_run'])
+
+
+@domain.command('add')
+@click.argument('domain')
+@click.option('--difficulty', '-d', type=int, default=18, help='PoW difficulty in bits (default: 18)')
+@click.option('--lockout', '-l', type=int, default=10080, help='Lockout period in minutes (default: 10080 = 7 days)')
+@click.option('--cookie-duration', '-c', type=int, default=604800, help='Cookie validity in seconds (default: 604800 = 7 days)')
+@click.option('--excuse-first-timeout', is_flag=True, help='Excuse first timeout failure')
+@click.option('--secret', type=str, help='Manual HMAC secret (auto-generated if not provided)')
+@click.pass_context
+def domain_add(ctx, domain, difficulty, lockout, cookie_duration, excuse_first_timeout, secret):
+    """Add a new protected domain"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['domain_manager']
+    
+    try:
+        # Validate domain
+        is_valid, error = validate_domain(domain)
+        if not is_valid:
+            logger.error(f"Invalid domain: {error}")
+            sys.exit(1)
+        
+        # Add domain
+        added = manager.add_domain(
+            domain=domain,
+            difficulty=difficulty,
+            cookie_duration=cookie_duration,
+            lockout_period=lockout,
+            excuse_first_timeout=excuse_first_timeout,
+            hmac_secret=secret
+        )
+        
+        if added:
+            logger.info(f"âœ“ Domain {domain} added successfully")
+            logger.info(f"  Difficulty: {difficulty} bits")
+            logger.info(f"  Lockout: {lockout} minutes")
+            logger.info(f"  Cookie duration: {cookie_duration} seconds")
+            logger.info(f"  Excuse first timeout: {excuse_first_timeout}")
+            
+            # Generate nginx config
+            nginx_manager = NginxManager(dry_run=ctx.obj['dry_run'])
+            nginx_manager.save_domain_config(domain, backup=True)
+            
+            logger.info(f"\nNext steps:")
+            logger.info(f"  1. Include /etc/ukabu/includes/domains/{domain}.conf in your vhost")
+            logger.info(f"  2. Run 'ukabu-manager nginx reload' to apply changes")
+        else:
+            logger.info(f"Domain {domain} already exists (no changes made)")
+    
+    except Exception as e:
+        logger.error(f"Failed to add domain: {e}")
+        sys.exit(2)
+
+
+@domain.command('remove')
+@click.argument('domain')
+@click.option('--force', '-f', is_flag=True, help='Skip confirmation')
+@click.pass_context
+def domain_remove(ctx, domain, force):
+    """Remove a protected domain"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['domain_manager']
+    
+    try:
+        if not manager.domain_exists(domain):
+            logger.info(f"Domain {domain} does not exist")
+            sys.exit(0)
+        
+        # Confirm removal
+        if not force and not ctx.obj['dry_run']:
+            if not confirm_action(f"Remove domain {domain} and its configuration?", default=False):
+                logger.info("Cancelled")
+                sys.exit(0)
+        
+        # Remove domain
+        manager.remove_domain(domain, force=force)
+        
+        # Remove nginx config
+        nginx_manager = NginxManager(dry_run=ctx.obj['dry_run'])
+        nginx_manager.remove_domain_config(domain)
+        
+        logger.info(f"âœ“ Domain {domain} removed successfully")
+        logger.info("Remember to reload nginx: ukabu-manager nginx reload")
+    
+    except Exception as e:
+        logger.error(f"Failed to remove domain: {e}")
+        sys.exit(2)
+
+
+@domain.command('list')
+@click.pass_context
+def domain_list(ctx):
+    """List all protected domains"""
+    manager = ctx.obj['domain_manager']
+    
+    domains = manager.list_domains()
+    
+    if not domains:
+        click.echo("No domains configured")
+        sys.exit(0)
+    
+    click.echo(f"Protected domains ({len(domains)}):")
+    for domain in domains:
+        click.echo(f"  â€¢ {domain}")
+
+
+@domain.command('show')
+@click.argument('domain')
+@click.pass_context
+def domain_show(ctx, domain):
+    """Show detailed configuration for a domain"""
+    manager = ctx.obj['domain_manager']
+    
+    config = manager.get_domain_config(domain)
+    if not config:
+        click.echo(f"Domain {domain} not found", err=True)
+        sys.exit(1)
+    
+    click.echo(f"\nDomain: {domain}")
+    click.echo("â”€" * 50)
+    click.echo(f"PoW Difficulty:       {config.get('pow_difficulty', 18)} bits")
+    click.echo(f"Cookie Duration:      {config.get('cookie_duration', 604800)} seconds")
+    click.echo(f"Lockout Period:       {config.get('lockout_period', 10080)} minutes")
+    click.echo(f"Excuse First Timeout: {config.get('excuse_first_timeout', False)}")
+    click.echo(f"Secret File:          {config.get('hmac_secret_file', 'N/A')}")
+    click.echo(f"Created:              {config.get('created_at', 'N/A')}")
+    click.echo(f"Updated:              {config.get('updated_at', 'N/A')}")
+    
+    exempt_paths = config.get('exempt_paths', [])
+    if exempt_paths:
+        click.echo(f"\nExempt Paths ({len(exempt_paths)}):")
+        for path in exempt_paths:
+            click.echo(f"  â€¢ {path}")
+    
+    restricted_paths = config.get('restricted_paths', {})
+    if restricted_paths:
+        click.echo(f"\nRestricted Paths ({len(restricted_paths)}):")
+        for path, ips in restricted_paths.items():
+            click.echo(f"  â€¢ {path}")
+            for ip in ips:
+                click.echo(f"      {ip}")
+
+
+@domain.command('set')
+@click.argument('domain')
+@click.option('--difficulty', '-d', type=int, help='New PoW difficulty in bits')
+@click.option('--lockout', '-l', type=int, help='New lockout period in minutes')
+@click.option('--cookie-duration', '-c', type=int, help='New cookie duration in seconds')
+@click.option('--excuse-first-timeout/--no-excuse-first-timeout', default=None, help='Change first timeout excuse setting')
+@click.pass_context
+def domain_set(ctx, domain, difficulty, lockout, cookie_duration, excuse_first_timeout):
+    """Update domain settings"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['domain_manager']
+    
+    try:
+        updated = manager.update_domain(
+            domain=domain,
+            difficulty=difficulty,
+            cookie_duration=cookie_duration,
+            lockout_period=lockout,
+            excuse_first_timeout=excuse_first_timeout
+        )
+        
+        if updated:
+            # Regenerate nginx config
+            nginx_manager = NginxManager(dry_run=ctx.obj['dry_run'])
+            nginx_manager.save_domain_config(domain, backup=True)
+            
+            logger.info(f"âœ“ Domain {domain} updated successfully")
+            logger.info("Remember to reload nginx: ukabu-manager nginx reload")
+            
+            # Notify daemon
+            try:
+                daemon = DaemonClient()
+                daemon.reload_config()
+                logger.info("âœ“ Daemon notified of configuration change")
+            except Exception as e:
+                logger.warning(f"Could not notify daemon: {e}")
+        
+    except Exception as e:
+        logger.error(f"Failed to update domain: {e}")
+        sys.exit(2)
+
+
+@domain.command('set-secret')
+@click.argument('domain')
+@click.option('--rotate', is_flag=True, help='Rotate secret (keep old one valid for 12 hours)')
+@click.option('--manual', type=str, help='Use manual secret instead of auto-generating')
+@click.pass_context
+def domain_set_secret(ctx, domain, rotate, manual):
+    """Set or rotate HMAC secret for domain"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['domain_manager']
+    
+    try:
+        if rotate:
+            manager.rotate_secret(domain, new_secret=manual)
+            logger.info(f"âœ“ Secret rotated for domain {domain}")
+            logger.info("Old secret will remain valid for 12 hours")
+        else:
+            # Direct secret update (replaces current)
+            from ukabu.utils import generate_hmac_secret
+            new_secret = manual if manual else generate_hmac_secret(64)
+            manager._save_secret(domain, new_secret, 'current')
+            logger.info(f"âœ“ Secret updated for domain {domain}")
+        
+        logger.info("Remember to reload nginx: ukabu-manager nginx reload")
+    
+    except Exception as e:
+        logger.error(f"Failed to set secret: {e}")
+        sys.exit(2)
+
+
+# IP management commands
+@cli.group()
+@click.pass_context
+def whitelist(ctx):
+    """Manage IP whitelist"""
+    ctx.obj['ip_manager'] = IPManager(dry_run=ctx.obj['dry_run'])
+
+
+@whitelist.command('add')
+@click.argument('ip_address')
+@click.pass_context
+def whitelist_add(ctx, ip_address):
+    """Add IP to whitelist"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['ip_manager']
+    
+    try:
+        added = manager.add_to_whitelist(ip_address)
+        if added:
+            logger.info(f"âœ“ Added {ip_address} to whitelist")
+            logger.info("Remember to reload nginx: ukabu-manager nginx reload")
+        else:
+            logger.info(f"IP {ip_address} already whitelisted")
+    
+    except Exception as e:
+        logger.error(f"Failed to add to whitelist: {e}")
+        sys.exit(2)
+
+
+@whitelist.command('remove')
+@click.argument('ip_address')
+@click.pass_context
+def whitelist_remove(ctx, ip_address):
+    """Remove IP from whitelist"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['ip_manager']
+    
+    try:
+        removed = manager.remove_from_whitelist(ip_address)
+        if removed:
+            logger.info(f"âœ“ Removed {ip_address} from whitelist")
+            logger.info("Remember to reload nginx: ukabu-manager nginx reload")
+        else:
+            logger.info(f"IP {ip_address} not in whitelist")
+    
+    except Exception as e:
+        logger.error(f"Failed to remove from whitelist: {e}")
+        sys.exit(2)
+
+
+@whitelist.command('list')
+@click.pass_context
+def whitelist_list(ctx):
+    """List all whitelisted IPs"""
+    manager = ctx.obj['ip_manager']
+    
+    ips = manager.get_whitelist()
+    
+    if not ips:
+        click.echo("No IPs in whitelist")
+        sys.exit(0)
+    
+    click.echo(f"Whitelisted IPs ({len(ips)}):")
+    for ip in ips:
+        click.echo(f"  â€¢ {ip}")
+
+
+@cli.group()
+@click.pass_context
+def blacklist(ctx):
+    """Manage IP blacklist"""
+    ctx.obj['ip_manager'] = IPManager(dry_run=ctx.obj['dry_run'])
+
+
+@blacklist.command('add')
+@click.argument('ip_address')
+@click.option('--duration', '-d', type=int, default=0, help='Lockout duration in minutes (0 for permanent)')
+@click.option('--reason', '-r', type=str, default="", help='Reason for blacklisting')
+@click.pass_context
+def blacklist_add(ctx, ip_address, duration, reason):
+    """Add IP to blacklist"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['ip_manager']
+    
+    try:
+        added = manager.add_to_blacklist(ip_address, duration=duration, reason=reason)
+        if added:
+            logger.info(f"âœ“ Added {ip_address} to blacklist")
+            if duration == 0:
+                logger.info("  Lockout: Permanent")
+            else:
+                logger.info(f"  Lockout: {duration} minutes")
+            
+            # Notify daemon to add to ipset
+            try:
+                daemon = DaemonClient()
+                daemon.add_block(ip_address, duration, reason)
+                logger.info("âœ“ Daemon updated with block")
+            except Exception as e:
+                logger.warning(f"Could not notify daemon: {e}")
+        else:
+            logger.info(f"IP {ip_address} already blacklisted")
+    
+    except Exception as e:
+        logger.error(f"Failed to add to blacklist: {e}")
+        sys.exit(2)
+
+
+@blacklist.command('remove')
+@click.argument('ip_address')
+@click.pass_context
+def blacklist_remove(ctx, ip_address):
+    """Remove IP from blacklist"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['ip_manager']
+    
+    try:
+        removed = manager.remove_from_blacklist(ip_address)
+        if removed:
+            logger.info(f"âœ“ Removed {ip_address} from blacklist")
+            
+            # Notify daemon to remove from ipset
+            try:
+                daemon = DaemonClient()
+                daemon.remove_block(ip_address)
+                logger.info("âœ“ Daemon updated (IP unblocked)")
+            except Exception as e:
+                logger.warning(f"Could not notify daemon: {e}")
+        else:
+            logger.info(f"IP {ip_address} not in blacklist")
+    
+    except Exception as e:
+        logger.error(f"Failed to remove from blacklist: {e}")
+        sys.exit(2)
+
+
+@blacklist.command('list')
+@click.pass_context
+def blacklist_list(ctx):
+    """List all blacklisted IPs"""
+    manager = ctx.obj['ip_manager']
+    
+    entries = manager.get_blacklist()
+    
+    if not entries:
+        click.echo("No IPs in blacklist")
+        sys.exit(0)
+    
+    click.echo(f"Blacklisted IPs ({len(entries)}):")
+    for entry in entries:
+        ip = entry['ip_address']
+        duration = entry.get('lockout_period', 0)
+        reason = entry.get('reason', '')
+        timestamp = entry.get('timestamp', 'N/A')
+        
+        if duration == 0:
+            click.echo(f"  â€¢ {ip} (PERMANENT)")
+        else:
+            click.echo(f"  â€¢ {ip} ({duration} min)")
+        
+        if reason:
+            click.echo(f"      Reason: {reason}")
+        click.echo(f"      Added: {timestamp}")
+
+
+# nginx management commands
+@cli.group()
+@click.pass_context
+def nginx(ctx):
+    """Manage nginx configuration"""
+    ctx.obj['nginx_manager'] = NginxManager(dry_run=ctx.obj['dry_run'])
+
+
+@nginx.command('generate-config')
+@click.option('--domain', '-d', type=str, help='Generate for specific domain (all if not specified)')
+@click.pass_context
+def nginx_generate(ctx, domain):
+    """Generate nginx configuration files"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['nginx_manager']
+    
+    try:
+        if domain:
+            config_file = manager.save_domain_config(domain, backup=True)
+            logger.info(f"âœ“ Generated configuration: {config_file}")
+        else:
+            config_files = manager.generate_all_configs()
+            logger.info(f"âœ“ Generated {len(config_files)} configuration file(s)")
+        
+        logger.info("\nNext step: ukabu-manager nginx reload")
+    
+    except Exception as e:
+        logger.error(f"Failed to generate configuration: {e}")
+        sys.exit(2)
+
+
+@nginx.command('test')
+@click.pass_context
+def nginx_test(ctx):
+    """Test nginx configuration"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['nginx_manager']
+    
+    try:
+        manager.test_config()
+        logger.info("âœ“ nginx configuration is valid")
+    
+    except Exception as e:
+        logger.error(f"nginx configuration test failed: {e}")
+        sys.exit(2)
+
+
+@nginx.command('reload')
+@click.option('--force', '-f', is_flag=True, help='Skip configuration test')
+@click.pass_context
+def nginx_reload(ctx, force):
+    """Reload nginx configuration"""
+    logger = ctx.obj['logger']
+    manager = ctx.obj['nginx_manager']
+    
+    try:
+        manager.reload(force=force)
+        logger.info("âœ“ nginx reloaded successfully")
+    
+    except Exception as e:
+        logger.error(f"nginx reload failed: {e}")
+        sys.exit(2)
+
+
+# Unblock command (flush strikes and remove from ipset)
+@cli.command('unblock')
+@click.argument('ip_address')
+@click.pass_context
+def unblock(ctx, ip_address):
+    """Unblock IP (flush strikes and remove from blacklist)"""
+    logger = ctx.obj['logger']
+    
+    try:
+        # Validate IP
+        is_valid, error = validate_ip(ip_address)
+        if not is_valid:
+            logger.error(f"Invalid IP address: {error}")
+            sys.exit(1)
+        
+        # Flush strikes via daemon
+        daemon = DaemonClient()
+        daemon.flush_strikes(ip_address)
+        logger.info(f"âœ“ Flushed strikes for {ip_address}")
+        
+        # Remove from blacklist
+        ip_manager = IPManager(dry_run=ctx.obj['dry_run'])
+        ip_manager.remove_from_blacklist(ip_address)
+        logger.info(f"âœ“ Removed {ip_address} from blacklist")
+        
+        # Remove from ipset
+        daemon.remove_block(ip_address)
+        logger.info(f"âœ“ Removed {ip_address} from ipset")
+    
+    except Exception as e:
+        logger.error(f"Failed to unblock IP: {e}")
+        sys.exit(2)
+
+
+# Status command
+@cli.command('status')
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed status')
+@click.option('--json', 'output_json', is_flag=True, help='Output as JSON')
+@click.option('--strikes', is_flag=True, help='Show strike counts')
+@click.pass_context
+def status(ctx, verbose, output_json, strikes):
+    """Show UKABU WAF status"""
+    import json
+    
+    domain_manager = DomainManager()
+    ip_manager = IPManager()
+    daemon = DaemonClient()
+    
+    status_data = {
+        'daemon': {},
+        'domains': [],
+        'whitelist_count': 0,
+        'blacklist_count': 0,
+        'strikes': {}
+    }
+    
+    # Daemon health check
+    health = daemon.health_check()
+    status_data['daemon'] = health
+    
+    # Domain count
+    domains = domain_manager.list_domains()
+    status_data['domains'] = domains
+    
+    # IP counts
+    whitelist = ip_manager.get_whitelist()
+    blacklist = ip_manager.get_blacklist()
+    status_data['whitelist_count'] = len(whitelist)
+    status_data['blacklist_count'] = len(blacklist)
+    
+    # Strikes (if requested)
+    if strikes and health['responsive']:
+        try:
+            status_data['strikes'] = daemon.get_strikes()
+        except:
+            status_data['strikes'] = {}
+    
+    # Output
+    if output_json:
+        click.echo(json.dumps(status_data, indent=2))
+    else:
+        click.echo("\nUKABU WAF Status")
+        click.echo("â•" * 50)
+        
+        # Daemon status
+        click.echo("\n Daemon Status")
+        click.echo("â”€" * 50)
+        if health['running'] and health['responsive']:
+            click.echo("âœ“ Status: Running")
+            if health['uptime']:
+                uptime_hours = health['uptime'] / 3600
+                click.echo(f"  Uptime: {uptime_hours:.1f} hours")
+            if health['memory_mb']:
+                click.echo(f"  Memory: {health['memory_mb']:.1f} MB")
+            click.echo(f"  Total strikes: {health['total_strikes']}")
+            click.echo(f"  Active blocks: {health['active_blocks']}")
+        else:
+            click.echo("âœ— Status: Not running or unresponsive")
+            if health['error']:
+                click.echo(f"  Error: {health['error']}")
+        
+        # Domains
+        click.echo("\nðŸ“‹ Protected Domains")
+        click.echo("â”€" * 50)
+        if domains:
+            click.echo(f"  Count: {len(domains)}")
+            if verbose:
+                for domain in domains:
+                    click.echo(f"  â€¢ {domain}")
+        else:
+            click.echo("  No domains configured")
+        
+        # IP lists
+        click.echo("\nðŸ›¡ï¸  IP Lists")
+        click.echo("â”€" * 50)
+        click.echo(f"  Whitelist: {len(whitelist)} IPs")
+        click.echo(f"  Blacklist: {len(blacklist)} IPs")
+        
+        if verbose and whitelist:
+            click.echo("\n  Whitelisted IPs:")
+            for ip in whitelist[:10]:
+                click.echo(f"    â€¢ {ip}")
+            if len(whitelist) > 10:
+                click.echo(f"    ... and {len(whitelist) - 10} more")
+        
+        if verbose and blacklist:
+            click.echo("\n  Blacklisted IPs:")
+            for entry in blacklist[:10]:
+                ip = entry['ip_address']
+                duration = entry.get('lockout_period', 0)
+                if duration == 0:
+                    click.echo(f"    â€¢ {ip} (PERMANENT)")
+                else:
+                    click.echo(f"    â€¢ {ip} ({duration} min)")
+            if len(blacklist) > 10:
+                click.echo(f"    ... and {len(blacklist) - 10} more")
+        
+        # Strikes
+        if strikes and status_data['strikes']:
+            click.echo("\nâš ï¸  Active Strikes")
+            click.echo("â”€" * 50)
+            for ip, count in status_data['strikes'].items():
+                click.echo(f"  â€¢ {ip}: {count} strike(s)")
+
+
+# Main entry point
+if __name__ == '__main__':
+    try:
+        cli(obj={})
+    except KeyboardInterrupt:
+        click.echo("\n\nInterrupted", err=True)
+        sys.exit(130)
+    except Exception as e:
+        click.echo(f"\nFATAL ERROR: {e}", err=True)
+        sys.exit(2)

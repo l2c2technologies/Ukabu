@@ -1,0 +1,30 @@
+# Copyright (c) 2025 by L2C2 Technologies. All rights reserved.
+# 
+# For licensing inquiries, contact:
+# Indranil Das Gupta <indradg@l2c2.co.in>
+
+[Unit]
+Description=UKABU Search Engine IP Updater
+Documentation=man:ukabu(8)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ukabu-fetch-google-ips.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ukabu-search-updater
+
+# Security hardening
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/etc/ukabu/config /var/log/ukabu /tmp
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

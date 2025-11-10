@@ -1,0 +1,18 @@
+# Copyright (c) 2025 by L2C2 Technologies. All rights reserved.
+# 
+# For licensing inquiries, contact:
+# Indranil Das Gupta <indradg@l2c2.co.in>
+
+[Unit]
+Description=UKABU CDN Proxy IP Daily Update Timer
+Documentation=man:ukabu(8)
+
+[Timer]
+# Run daily at 3:00 AM
+OnCalendar=daily
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

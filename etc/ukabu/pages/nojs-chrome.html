@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ukabu WAF - JavaScript is required</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .error-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 650px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #d9534f;
+            margin-top: 0;
+            font-size: 2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h1::before {
+            content: "Ã¢Å¡Â Ã¯Â¸Â";
+            font-size: 1.2em;
+        }
+        p {
+            color: #333;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+        .browser-detected {
+            background-color: #e3f2fd;
+            padding: 12px 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        .browser-detected p {
+            margin: 0;
+            color: #0056b3;
+            font-weight: 600;
+        }
+        .instructions {
+            margin: 25px 0;
+        }
+        .instructions h2 {
+            color: #0056b3;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        details {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin: 12px 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        details[open] {
+            border-color: #0056b3;
+            background-color: #fff;
+        }
+        summary {
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.05em;
+            color: #333;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        summary::after {
+            content: "Ã¢â€“Â¼";
+            font-size: 0.8em;
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+        details[open] summary::after {
+            transform: rotate(-180deg);
+        }
+        summary:hover {
+            background-color: #e9ecef;
+        }
+        details[open] summary {
+            border-bottom: 2px solid #e9ecef;
+            background-color: #f8f9fa;
+        }
+        .browser-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        .accordion-content {
+            padding: 20px;
+        }
+        .url-container {
+            margin: 15px 0;
+        }
+        .url-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .browser-url {
+            background-color: #e3f2fd;
+            border: 2px solid #0056b3;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #0056b3;
+            font-weight: 600;
+            word-break: break-all;
+            cursor: text;
+            user-select: all;
+        }
+        .browser-url:hover {
+            background-color: #bbdefb;
+        }
+        .url-help {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        li {
+            margin: 10px 0;
+            color: #555;
+            line-height: 1.5;
+        }
+        code {
+            background-color: #e9ecef;
+            padding: 3px 7px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .quick-tip {
+            background-color: #fff3cd;
+            padding: 12px 15px;
+            margin: 15px 0 20px 0;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .quick-tip p {
+            margin: 0;
+            color: #856404;
+        }
+        .note {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        .note p {
+            margin: 0;
+            color: #666;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 0.85em;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        @media screen and (max-width: 480px) {
+            .error-container {
+                padding: 25px 15px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            summary {
+                padding: 12px 15px;
+                font-size: 0.95em;
+            }
+            .accordion-content {
+                padding: 15px;
+            }
+            .browser-url {
+                font-size: 0.85em;
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1>Ukabu WAF - JavaScript is required</h1>
+
+        <p>
+            This website - <!--#echo var="scheme" -->://<!--#echo var="host" --> uses browser verification to protect against automated bots and requires JavaScript to be enabled.
+        </p>
+
+        <p>
+            <strong>Your browser currently has JavaScript disabled or does not support it.</strong>
+        </p>
+
+        <div class="browser-detected">
+            <p>Ã°Å¸Å½Â¯ <strong>We detected you're using Google Chrome.</strong> Instructions below are customized for your browser.</p>
+        </div>
+
+        <div class="instructions">
+            <h2>How to Enable JavaScript:</h2>
+
+            <div class="quick-tip">
+                <p>
+                    Ã°Å¸â€™Â¡ <strong>Quick tip:</strong> Click on the blue URL box to select it, then copy and paste into your browser's address bar.
+                </p>
+            </div>
+
+            <details id="accordion-chrome" open>
+                <summary>
+                    <span><span class="browser-icon">Ã°Å¸â€Âµ</span>Google Chrome</span>
+                </summary>
+                <div class="accordion-content">
+                    <p><strong>Quick access:</strong></p>
+                    <div class="url-container">
+                        <div class="browser-url">chrome://settings/content/javascript</div>
+                        <div class="url-help">Click the box above to select, then copy (Ctrl+C) and paste into your address bar</div>
+                    </div>
+
+                    <p><strong>Alternative method:</strong></p>
+                    <ol>
+                        <li>Click the <strong>lock icon</strong> or <strong>site settings</strong> icon in the address bar</li>
+                        <li>Find <strong>JavaScript</strong> in the permissions list</li>
+                        <li>Change the setting to <strong>Allow</strong></li>
+                        <li>Refresh this page</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details id="accordion-firefox">
+                <summary>
+                    <span><span class="browser-icon">Ã°Å¸Â¦Å </span>Mozilla Firefox</span>
+                </summary>
+                <div class="accordion-content">
+                    <p><strong>Quick access:</strong></p>
+                    <div class="url-container">
+                        <div class="browser-url">about:config</div>
+                        <div class="url-help">Click the box above to select, then copy (Ctrl+C) and paste into your address bar</div>
+                    </div>
+
+                    <p><strong>Then follow these steps:</strong></p>
+                    <ol>
+                        <li>Accept the warning prompt (if shown)</li>
+                        <li>In the search box, type: <code>javascript.enabled</code></li>
+                        <li>Click the <strong>toggle button</strong> to set it to <code>true</code></li>
+                        <li>Refresh this page</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details id="accordion-edge">
+                <summary>
+                    <span><span class="browser-icon">Ã°Å¸Å’Â</span>Microsoft Edge</span>
+                </summary>
+                <div class="accordion-content">
+                    <p><strong>Quick access:</strong></p>
+                    <div class="url-container">
+                        <div class="browser-url">edge://settings/content/javascript</div>
+                        <div class="url-help">Click the box above to select, then copy (Ctrl+C) and paste into your address bar</div>
+                    </div>
+
+                    <p><strong>Alternative method:</strong></p>
+                    <ol>
+                        <li>Click the <strong>lock icon</strong> in the address bar</li>
+                        <li>Go to <strong>Site permissions</strong></li>
+                        <li>Find <strong>JavaScript</strong> and set to <strong>Allow</strong></li>
+                        <li>Refresh this page</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details id="accordion-safari">
+                <summary>
+                    <span><span class="browser-icon">Ã°Å¸Â§Â­</span>Safari</span>
+                </summary>
+                <div class="accordion-content">
+                    <p><strong>Note:</strong> Safari doesn't have a direct URL for JavaScript settings.</p>
+
+                    <p><strong>Follow these steps:</strong></p>
+                    <ol>
+                        <li>Open <strong>Safari</strong> menu Ã¢â€ â€™ <strong>Settings</strong> (or <strong>Preferences</strong> on older versions)</li>
+                        <li>Click the <strong>Security</strong> tab</li>
+                        <li>Check the box for <strong>Enable JavaScript</strong></li>
+                        <li>Close settings and refresh this page</li>
+                    </ol>
+
+                    <p style="font-size: 0.9em; color: #666; margin-top: 15px; font-style: italic;">
+                        On macOS: Safari menu Ã¢â€ â€™ Settings Ã¢â€ â€™ Security tab<br>
+                        On iOS: Settings app Ã¢â€ â€™ Safari Ã¢â€ â€™ Advanced Ã¢â€ â€™ JavaScript
+                    </p>
+                </div>
+            </details>
+        </div>
+
+        <div class="note">
+            <p>
+                <strong>Using a text-based browser?</strong> Browsers like Lynx, ELinks, or w3m don't support JavaScript.
+                You'll need to use a modern graphical browser (Chrome, Firefox, Edge, or Safari) to access this site.
+            </p>
+        </div>
+
+        <div class="footer">
+            Created by L2C2 Technologies
+        </div>
+    </div>
+</body>
+</html>

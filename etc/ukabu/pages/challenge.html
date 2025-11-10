@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Verification</title>
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=/ukabu_help">
+    </noscript>
+    <style>
+        :root {
+            --success-green: #1e7e34;
+            --waf-blue: #0056b3;
+            --error-red: #d9534f;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .check-container {
+            text-align: center;
+            background-color: #fff;
+            padding: 40px 60px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            padding-top: 50px;
+            padding-bottom: 70px;
+            min-width: 400px;
+        }
+
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 0;
+            background-color: var(--waf-blue);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            z-index: 10;
+        }
+
+        /* NoScript warning styles */
+        .noscript-warning {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .noscript-warning h2 {
+            color: var(--error-red);
+            margin-bottom: 20px;
+        }
+
+        .noscript-warning p {
+            color: #333;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+
+        .noscript-warning .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .noscript-warning .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .noscript-warning .instructions li {
+            margin: 8px 0;
+        }
+
+        .key-generator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 40px auto 20px;
+            position: relative;
+            width: 100%;
+            height: 120px;
+            z-index: 1;
+        }
+
+        .device-icon {
+            width: 8em;
+            height: 8em;
+            position: relative;
+            animation: colorCycle 4s linear infinite;
+        }
+
+        @keyframes colorCycle {
+            0% { filter: hue-rotate(0deg) brightness(1); }
+            25% { filter: hue-rotate(90deg) brightness(1.1); }
+            50% { filter: hue-rotate(180deg) brightness(1.2); }
+            75% { filter: hue-rotate(270deg) brightness(1.1); }
+            100% { filter: hue-rotate(360deg) brightness(1); }
+        }
+
+        .magnifying-glass {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 2em;
+            height: 2em;
+            animation: circleOrbit 2s linear infinite;
+            transform-origin: 0 0;
+        }
+
+        @keyframes circleOrbit {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg) translateX(70px) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg) translateX(70px) rotate(-360deg);
+            }
+        }
+
+        .check-container.complete .magnifying-glass {
+            animation: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .final-check-wrapper {
+            position: absolute;
+            top: calc(50% - 140px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100px;
+            height: 100px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in 0.5s;
+            z-index: 0;
+        }
+
+        .check-mark {
+            width: 40px;
+            height: 80px;
+            border-right: 12px solid var(--success-green);
+            border-bottom: 12px solid var(--success-green);
+            transform: rotate(45deg) scale(0);
+            opacity: 0;
+            transition: transform 0.5s ease-out 0.3s, opacity 0.5s ease-out 0.3s;
+            box-sizing: border-box;
+        }
+
+        .status-text {
+            font-size: 1.2em;
+            color: #333;
+            margin-top: calc(70px + 4em);
+            margin-bottom: 15px;
+        }
+
+        .stats-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stat-value {
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: var(--waf-blue);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--waf-blue), #667eea);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .loader-dots {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--waf-blue);
+            border-radius: 50%;
+            margin: 0 5px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.7); opacity: 0.5; }
+        }
+
+        .error {
+            color: #d9534f;
+        }
+
+        .fine-print {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            font-size: 0.7em;
+            color: #999;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+        }
+
+        .check-container.complete .key-generator {
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .check-container.complete .final-check-wrapper {
+            opacity: 1;
+        }
+
+        .check-container.complete .check-mark {
+            opacity: 1;
+            transform: rotate(45deg) scale(1);
+        }
+
+        .check-container.complete .loader-dots,
+        .check-container.complete .stats-container {
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            .check-container {
+                padding: 40px 20px;
+                padding-top: 50px;
+                padding-bottom: 70px;
+                width: 100%;
+                min-width: unset;
+                box-sizing: border-box;
+            }
+
+            .device-icon {
+                width: 3.5em;
+                height: 3.5em;
+            }
+
+            .magnifying-glass {
+                width: 1.8em;
+                height: 1.8em;
+            }
+
+            @keyframes circleOrbit {
+                0% {
+                    transform: translate(-50%, -50%) rotate(0deg) translateX(60px) rotate(0deg);
+                }
+                100% {
+                    transform: translate(-50%, -50%) rotate(360deg) translateX(60px) rotate(-360deg);
+                }
+            }
+
+            .stat-row {
+                font-size: 0.8em;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 20px;
+            }
+
+            .check-container {
+                padding: 30px 20px;
+                padding-top: 50px;
+                padding-bottom: 60px;
+            }
+
+            .header {
+                font-size: 0.9em;
+                padding: 8px 5px;
+            }
+
+            .device-icon {
+                width: 3em;
+                height: 3em;
+            }
+
+            .magnifying-glass {
+                width: 1.5em;
+                height: 1.5em;
+            }
+
+            @keyframes circleOrbit {
+                0% {
+                    transform: translate(-50%, -50%) rotate(0deg) translateX(50px) rotate(0deg);
+                }
+                100% {
+                    transform: translate(-50%, -50%) rotate(360deg) translateX(50px) rotate(-360deg);
+                }
+            }
+
+            .status-text {
+                font-size: 1em;
+            }
+
+            .stats-container {
+                padding: 10px;
+            }
+
+            .stat-row {
+                font-size: 0.75em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- This fallback shows if JavaScript is disabled -->
+    <noscript>
+        <div class="noscript-warning">
+            <h2>Ã¢Å¡Â Ã¯Â¸Â JavaScript Required</h2>
+            <p>This website requires JavaScript to verify that you're using a real browser and not an automated bot.</p>
+
+            <div class="instructions">
+                <strong>To enable JavaScript in Chrome:</strong>
+                <ol>
+                    <li>Click the <strong>lock icon</strong> or <strong>site settings</strong> in the address bar</li>
+                    <li>Find <strong>JavaScript</strong> in the list</li>
+                    <li>Change it to <strong>Allow</strong></li>
+                    <li>Refresh this page</li>
+                </ol>
+            </div>
+
+            <p style="margin-top: 20px; color: #666;">
+                If you're using a text-based browser (like Lynx or ELinks), this site cannot be accessed without JavaScript support.
+            </p>
+        </div>
+    </noscript>
+
+    <div class="check-container" id="check-container">
+        <div class="header">Security Verification</div>
+
+        <div class="key-generator">
+            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCIgdmVyc2lvbj0iMS4xIiB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iPgogPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAtMTAyOC40KSI+CiAgPHBhdGggZD0ibTguODc1IDE5YzAuMDEyOCAwLjE2OSAwLjAzMTIgMC4zMjcgMC4wMzEyIDAuNSAwIDEuODYzLTAuNzQ2NSAzLjUwNS0xLjkwNjIgNC41aDQgMiA0Yy0xLjE2LTAuOTk1LTEuOTA2LTIuNjM3LTEuOTA2LTQuNSAwLTAuMTczIDAuMDE4LTAuMzMxIDAuMDMxLTAuNWgtMi4xMjUtMi0yLjEyNXoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAgMTAyOC40KSIgZmlsbD0iIzk1YTVhNiIvPgogIDxwYXRoIGQ9Im04Ljg3NSAxMDQ3LjRjMC4wMTI4IDAuMSAwLjAzMTIgMC4zIDAuMDMxMiAwLjUgMCAwLjUtMC4wNDYyIDEtMC4xNTYyIDEuNWg2LjVjLTAuMTEtMC41LTAuMTU2LTEtMC4xNTYtMS41IDAtMC4yIDAuMDE4LTAuNCAwLjAzMS0wLjVoLTIuMTI1LTItMi4xMjV6IiBmaWxsPSIjN2Y4YzhkIi8+CiAgPHBhdGggZD0ibTEgMTAzMS40Yy0wLjU1MjI4IDAtMSAwLjQtMSAxdjEgMiAyIDIgMSAxIDEgMiAyIDFjMCAwLjUgMC40NDc3MiAxIDEgMWgxIDEzIDYgMSAxYzAuNTUyIDAgMS0wLjUgMS0xdi0xLTctMS0xLTItMi0xYzAtMC42LTAuNDQ4LTEtMS0xaC0xLTUtMS05LTQtMS0xeiIgZmlsbD0iI2JkYzNjNyIvPgogIDxyZWN0IGhlaWdodD0iMTQiIHdpZHRoPSIyMiIgeT0iMTAzMi40IiB4PSIxIiBmaWxsPSIjMzQ0OTVlIi8+CiAgPHBhdGggZD0ibTIzIDEwMzMuNC0yMSAxM2gxOS41ODIgMS40MTh2LTEuNi0xMS40eiIgZmlsbD0iIzJjM2U1MCIvPgogPC9nPgo8L3N2Zz4K" alt="Desktop" class="device-icon" />
+            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCIgdmVyc2lvbj0iMS4xIiB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iPgogPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAtMTAyOC40KSI+CiAgPHJlY3QgdHJhbnNmb3JtPSJyb3RhdGUoLTQ1KSIgaGVpZ2h0PSIxMCIgd2lkdGg9IjQiIHk9Ijc0Ny41NyIgeD0iLTcyOS4wNCIgZmlsbD0iIzk1YTVhNiIvPgogIDxyZWN0IHRyYW5zZm9ybT0icm90YXRlKC00NSkiIGhlaWdodD0iMyIgd2lkdGg9IjQiIHk9Ijc0Ny41NyIgeD0iLTcyOS4wNCIgZmlsbD0iIzdmOGM4ZCIvPgogIDxwYXRoIGQ9Im0zLjIwMSAxMDMxLjRjLTMuNTE0NyAzLjUtMy41MTQ3IDkuMiAwIDEyLjcgMy41MTQ4IDMuNSA5LjIxMyAzLjUgMTIuNzI4IDBzMy41MTUtOS4yIDAtMTIuNy05LjIxMzMtMy41LTEyLjcyOCAwem0yLjEyMTMgMi4xYzIuMzQzMi0yLjMgNi4xNDE3LTIuMyA4LjQ4NTcgMCAyLjM0MyAyLjQgMi4zNDMgNi4yIDAgOC41LTIuMzQ0IDIuMy02LjE0MjUgMi4zLTguNDg1NyAwLTIuMzQzMS0yLjMtMi4zNDMxLTYuMSAwLTguNXoiIGZpbGw9IiNiZGMzYzciLz4KICA8cGF0aCBkPSJtMTYgOS41YTYuNSA2LjUgMCAxIDEgLTEzIDAgNi41IDYuNSAwIDEgMSAxMyAweiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAxMDI4LjQpIiBmaWxsPSIjZWNmMGYxIi8+CiA8L2c+Cjwvc3ZnPgo=" alt="Search" class="magnifying-glass" />
+        </div>
+
+        <div class="final-check-wrapper">
+            <div class="check-mark"></div>
+        </div>
+
+        <p class="status-text" id="status-text">Initializing verification...</p>
+
+        <div class="stats-container" id="stats-container">
+            <div class="stat-row">
+                <span class="stat-label">Difficulty:</span>
+                <span class="stat-value" id="difficulty">--</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Attempts:</span>
+                <span class="stat-value" id="attempts">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Speed:</span>
+                <span class="stat-value" id="speed">-- H/s</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Elapsed:</span>
+                <span class="stat-value" id="elapsed">0.0s</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Est. Remaining:</span>
+                <span class="stat-value" id="remaining">calculating...</span>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="progress-text" id="progress-text">0%</div>
+
+        <div class="loader-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+
+        <div class="fine-print">Copyright (c) 2025 by L2C2 Technologies. All rights reserved.<hr>Icon &copy; <a href="https://github.com/paomedia/small-n-flat" target="_blank" style="color: #999; text-decoration: none;">paomedia.github.io/small-n-flat</a></div>
+    </div>
+
+    <script>
+        // Detect if this is the very first time the page loads
+        // If JS runs, hide the noscript warning and run the challenge
+        (function() {
+            var container = document.getElementById('check-container');
+            var statusEl = document.getElementById('status-text');
+            var difficultyEl = document.getElementById('difficulty');
+            var attemptsEl = document.getElementById('attempts');
+            var speedEl = document.getElementById('speed');
+            var elapsedEl = document.getElementById('elapsed');
+            var remainingEl = document.getElementById('remaining');
+            var progressBar = document.getElementById('progress-bar');
+            var progressText = document.getElementById('progress-text');
+
+            var startTime = 0;
+            var updateInterval = null;
+            var currentNonce = 0;
+            var difficulty = 0;
+            var expectedAttempts = 0;
+
+            function sha256(message) {
+                return crypto.subtle.digest('SHA-256', new TextEncoder().encode(message))
+                    .then(function(hashBuffer) {
+                        var hashArray = Array.from(new Uint8Array(hashBuffer));
+                        return hashArray.map(function(b) {
+                            return b.toString(16).padStart(2, '0');
+                        }).join('');
+                    });
+            }
+
+            function checkDifficulty(hash, diff) {
+                var requiredZeros = Math.floor(diff / 4);
+                var prefix = '0'.repeat(requiredZeros);
+
+                if (!hash.startsWith(prefix)) {
+                    return false;
+                }
+
+                var remainingBits = diff % 4;
+                if (remainingBits > 0) {
+                    var nextChar = parseInt(hash.charAt(requiredZeros), 16);
+                    var mask = (1 << (4 - remainingBits)) - 1;
+                    return (nextChar & ~mask) === 0;
+                }
+
+                return true;
+            }
+
+            function formatTime(seconds) {
+                if (seconds < 60) {
+                    return seconds.toFixed(1) + 's';
+                } else if (seconds < 3600) {
+                    var mins = Math.floor(seconds / 60);
+                    var secs = Math.floor(seconds % 60);
+                    return mins + 'm ' + secs + 's';
+                } else {
+                    var hours = Math.floor(seconds / 3600);
+                    var mins = Math.floor((seconds % 3600) / 60);
+                    return hours + 'h ' + mins + 'm';
+                }
+            }
+
+            function updateStats() {
+                var elapsed = (Date.now() - startTime) / 1000;
+                var hashRate = currentNonce / elapsed;
+                var progress = (currentNonce / expectedAttempts) * 100;
+
+                if (progress > 99) progress = 99;
+
+                attemptsEl.textContent = currentNonce.toLocaleString();
+                speedEl.textContent = Math.round(hashRate).toLocaleString() + ' H/s';
+                elapsedEl.textContent = formatTime(elapsed);
+
+                if (hashRate > 0 && currentNonce > 100) {
+                    var remainingAttempts = expectedAttempts - currentNonce;
+                    var estimatedSeconds = remainingAttempts / hashRate;
+                    remainingEl.textContent = formatTime(estimatedSeconds);
+                } else {
+                    remainingEl.textContent = 'calculating...';
+                }
+
+                progressBar.style.width = progress + '%';
+                progressText.textContent = Math.round(progress) + '%';
+            }
+
+            function solveChallenge(challenge, diff) {
+                difficulty = diff;
+                difficultyEl.textContent = diff + ' bits';
+
+                expectedAttempts = Math.pow(2, diff);
+
+                var nonce = 0;
+                startTime = Date.now();
+
+                updateInterval = setInterval(updateStats, 250);
+
+                function tryNonce() {
+                    currentNonce = nonce;
+                    var solution = challenge + ':' + nonce;
+
+                    return sha256(solution).then(function(hash) {
+                        if (checkDifficulty(hash, diff)) {
+                            clearInterval(updateInterval);
+
+                            var elapsed = (Date.now() - startTime) / 1000;
+                            attemptsEl.textContent = nonce.toLocaleString();
+                            elapsedEl.textContent = formatTime(elapsed);
+                            remainingEl.textContent = '0s';
+                            progressBar.style.width = '100%';
+                            progressText.textContent = '100%';
+
+                            container.classList.add('complete');
+                            statusEl.textContent = 'Verified in ' + elapsed.toFixed(2) + 's!';
+
+                            return nonce;
+                        }
+
+                        nonce++;
+
+                        if (nonce % 100 === 0) {
+                            return new Promise(function(resolve) {
+                                setTimeout(function() {
+                                    resolve(tryNonce());
+                                }, 0);
+                            });
+                        }
+
+                        return tryNonce();
+                    });
+                }
+
+                return tryNonce();
+            }
+
+            statusEl.textContent = 'Connecting to server...';
+
+            fetch('/ukabu_challenge')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    statusEl.textContent = 'Computing proof-of-work...';
+                    return solveChallenge(data.challenge, data.difficulty)
+                        .then(function(nonce) {
+                            return {
+                                challenge: data.challenge,
+                                hmac: data.hmac,
+                                nonce: nonce
+                            };
+                        });
+                })
+                .then(function(solution) {
+                    statusEl.textContent = 'Validating solution...';
+                    var redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/';
+                    return fetch('/ukabu_validate?redirect=' + encodeURIComponent(redirectUrl), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(solution)
+                    });
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        statusEl.textContent = 'Success! Redirecting...';
+                        setTimeout(function() {
+                            window.location.href = result.redirect;
+                        }, 1000);
+                    } else {
+                        throw new Error('Validation failed');
+                    }
+                })
+                .catch(function(error) {
+                    clearInterval(updateInterval);
+                    statusEl.className = 'status-text error';
+                    statusEl.textContent = 'Verification failed. Please refresh to try again.';
+                    console.error('Challenge error:', error);
+                });
+        })();
+    </script>
+</body>
+</html>

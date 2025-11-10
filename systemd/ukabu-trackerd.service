@@ -1,0 +1,44 @@
+# ========================================
+# UKABU WAF - Tracker Daemon Service
+# Copyright (c) 2025 by L2C2 Technologies. All rights reserved.
+# ========================================
+
+[Unit]
+Description=UKABU WAF Strike Tracker Daemon
+Documentation=https://github.com/your-org/ukabu
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+ExecStart=/usr/local/bin/ukabu-trackerd \
+    --config=/etc/ukabu/config/domains.json \
+    --socket=/var/run/ukabu/tracker.sock \
+    --db=/var/lib/ukabu/strikes.db \
+    --metrics-port=9090 \
+    --log=/var/log/ukabu/trackerd.log
+
+# Restart policy
+Restart=always
+RestartSec=5s
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ukabu /var/run/ukabu /var/log/ukabu
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=512
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ukabu-trackerd
+
+[Install]
+WantedBy=multi-user.target

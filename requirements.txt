@@ -1,0 +1,5 @@
+# Copyright (c) 2025 by L2C2 Technologies. All rights reserved.
+# Python dependencies for UKABU WAF Component C (ukabu-manager)
+
+click>=8.1.0
+jinja2>=3.1.0

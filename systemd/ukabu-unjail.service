@@ -1,0 +1,6 @@
+[Unit]
+Description=UKABU WAF Unjail Expired Blocks
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/ukabu-unjail.sh

@@ -1,0 +1,25 @@
+{
+  "default": {
+    "pow_difficulty": 18,
+    "cookie_duration": 604800,
+    "lockout_period": 10080,
+    "excuse_first_timeout": false,
+    "xff_handling": {
+      "enabled": false
+    }
+  },
+  "domains": {
+    "test.local": {
+      "pow_difficulty": 18,
+      "hmac_secret_file": "/etc/ukabu/secrets/test.local.key",
+      "cookie_duration": 604800,
+      "lockout_period": 10080,
+      "excuse_first_timeout": false,
+      "exempt_paths": [],
+      "restricted_paths": {},
+      "xff_handling": {
+        "enabled": false
+      }
+    }
+  }
+}

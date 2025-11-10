@@ -1,0 +1,43 @@
+UKABU WAF v1.0.0 - Installation Instructions
+=============================================
+
+Copyright (c) 2025 by L2C2 Technologies. All rights reserved.
+Contact: Indranil Das Gupta <indradg@l2c2.co.in>
+
+QUICK START
+-----------
+
+1. Extract this tarball:
+   tar -xzf ukabu-1.0.0.tar.gz
+   cd ukabu-1.0.0
+
+2. Run the unified installer:
+   sudo bash install.sh
+
+3. Follow the prompts and post-installation instructions.
+
+4. Read the README.md for complete documentation.
+
+REQUIREMENTS
+------------
+
+- OS: Ubuntu 20.04+ / Debian 11+ / RHEL 8+ / Rocky Linux 8+
+- nginx 1.18+ with nginx-module-njs (REQUIRED!)
+- Go 1.19+ (for Component B (ukabu-monitor))
+- Python 3.10+ (for Component C (ukabu-manager))
+- iptables/nftables + ipset (for Component B (ukabu-monitor))
+
+DOCUMENTATION
+-------------
+
+All documentation is in the docs/ directory:
+- README.md - Start here!
+- QUICKSTART.md - 5-minute setup
+- UKABU-DEPLOYMENT-GUIDE.md - Production deployment
+- And many more...
+
+SUPPORT
+-------
+
+Email: indradg@l2c2.co.in
+Licensing: indradg@l2c2.co.in
