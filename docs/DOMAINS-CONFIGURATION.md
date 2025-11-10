@@ -1000,7 +1000,7 @@ ukabu-manager status
 
 **Solutions:**
 1. Check browser console for JavaScript errors
-2. Verify `/__pow_validate` endpoint is accessible
+2. Verify `/ukabu_validate` endpoint is accessible
 3. Check difficulty isn't too high (try reducing from 20 to 18)
 4. Clear browser cache and cookies
 5. Test in different browser
